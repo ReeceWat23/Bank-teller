@@ -3,7 +3,7 @@ import java.util.*;
 /**
  * BankAccount class: Manages balance, deposits, withdrawals, and transfers.
  *
-
+*/
 class BankAccount {
     private double balance;
     private String accountNumber;
