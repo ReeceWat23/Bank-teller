@@ -4,22 +4,32 @@ import java.util.*;
  * BankAccount class: Manages balance, deposits, withdrawals, and transfers.
  *
 */
+
 class BankAccount {
     private double balance;
     private String accountNumber;
     // History now stores Transaction objects
     private List<Transaction> transactionHistory;
-    private static int accountCounter = 10;
+//    private static int accountCounter = 10;
 
     // Constructor
+    // Constructor for our bank account, initialized with a balance
+    // stores
+    // - a generated account # corresponding to the total # of accounts in a bank + a "ACC" string
+    // - balance
+    // - transaction history ( list of type transaction )
     public BankAccount(double initialBalance) {
         this.balance = initialBalance;
-        this.accountNumber = "ACC-" + accountCounter++;
+
+//        this.accountNumber = "ACC-" + accountCounter;
         this.transactionHistory = new ArrayList<>();
     }
 
     // --- Core Financial Methods ---
 
+    // Deposit function: used to put money into accounts for general deposits and transfers
+    // Params: amount to deposit into this account
+    // return: void
     public void deposit(double amount) {
         // Bug: No check for amount > 0
         balance += amount;
@@ -29,24 +39,26 @@ class BankAccount {
         System.out.println("ACC-" + accountNumber + ": Deposited " + amount + ". New Balance: " + balance);
     }
 
+
+    // withdraw function: used to take money out of ones account for transfers and just to get cash
+    // params: amount to with draw from this account
+    // return: void
     public void withdraw(double amount) {
         if (amount <= 0) {
             System.out.println("Error: Withdrawal amount must be positive.");
             return;
         }
 
-        // Bug: Overdraft check removed. Balance may go negative.
         balance -= amount;
 
-        // Log as a transaction where "to" is null (external destination)
+        // Log as a transaction
         logTransaction(new Transaction(amount, this.accountNumber, null));
         System.out.println("ACC-" + accountNumber + ": Withdrew " + amount + ". New Balance: " + balance);
     }
 
-    /**
-     * Seeded Bugs: Allows transfer to same account (Bank class handles it), ignores rounding,
-     * and seeds the 'to' missing history bug on the transfer-in side.
-     */
+    // transfer money to and from accounts
+    // params: a target account & amount to transfer
+    // return: void
     public void transfer(BankAccount target, double amount) {
         if (target == null) {
             System.out.println("Error: Target account is null.");
@@ -57,10 +69,10 @@ class BankAccount {
             return;
         }
 
-        // 1. Withdraw from source (no overdraft check)
+        // 1. Withdraw from source
         this.balance -= amount;
 
-        // 2. Deposit into target (no rounding correction)
+        // 2. Deposit into target
         target.balance += amount;
 
         // 3. Log transactions on both sides
@@ -108,7 +120,7 @@ class BankAccount {
             if ((Objects.equals(transactionHistory.get(i).getTo(), accNumber))  & (transactionHistory.get(i).getAmount()== amount)){
 
                 foundTransactions.add(transactionHistory.get(i));
-                // break out of the loop because we've found at least 1 match
+                // collect all transactions found with that amount and user
 
             }
 
@@ -117,10 +129,27 @@ class BankAccount {
         return foundTransactions;
     }
 
+
+    // Updated number: used to update the account number so that it coressponds with this bank
+    // params: a number which will be the # of accounts in the bank
+    // return: void
+    public void updateNumber (int number){
+
+        this.accountNumber = "ACC-0" + number++;
+    }
+
+
+    // function to get the balance for this account
+    // params: none
+    // return: double == this accounts balance
     public double getBalance() {
         return balance;
     }
 
+
+    // function to get the account number for this account
+    // params: none
+    // return: String == this accounts number
     public String getAccountNumber() {
         return accountNumber;
     }
@@ -134,11 +163,13 @@ class BankAccount {
         System.out.println("======================================");
     }
 }
-// -----------------------------------------------------------------------------
-// Bank class: Holds accounts and centralizes account lookup.
+
+// Bank class: Holds accounts & facilitates transfers
 class Bank {
     private String bankName;
     private Map<String, BankAccount> accounts;
+
+//    private int accountCounter = accounts.size();
 
     public Bank(String bankName) {
         this.bankName = bankName;
@@ -148,17 +179,33 @@ class Bank {
 
     public void addAccount(BankAccount account) {
         if (account == null) return;
+        // update the account number for this bank
+        account.updateNumber(this.getSize());
+
         accounts.put(account.getAccountNumber(), account);
+
         System.out.println("Added: " + account.getAccountNumber());
+
     }
 
     // Centralized lookup method
     public BankAccount getAccount(String accountNumber) {
+
         BankAccount account = accounts.get(accountNumber);
-        if (account == null) {
-            throw new IllegalArgumentException("Account not found: " + accountNumber);
+        if(account == null) {
+            System.out.println("account not found");
+
         }
         return account;
+    }
+
+
+    // Get Size function used for seeing how many accounts there are: helpful for account # creation
+    // params: none
+    // return: int size()
+    public int getSize(){
+
+        return this.accounts.size();
     }
 
     // Centralized transfer logic using the account's internal transfer method
@@ -193,7 +240,6 @@ class Transaction {
     public Transaction(double amount, String from, String to) {
         this.amount = amount;
         this.from = from;
-        // Bug Seed: The 'to' field is deliberately set to null/missing for a certain type of transaction.
         this.to = to;
     }
 
@@ -217,56 +263,5 @@ class Transaction {
                 (from != null ? "FROM: " + from : "") +
                 (to != null ? " TO: " + to : "") +
                 " | Amount: " + amount;
-    }
-}
-
-// -----------------------------------------------------------------------------
-// Main class for demonstration
-public class bankC {
-    public static void main(String[] args) {
-        System.out.println("=== Bug-Seeded Bank Demo ===");
-
-        // Setup
-        Bank centralBank = new Bank("My Simple Bank");
-        // Initial balance can be negative (Seeded Bug)
-        BankAccount alice = new BankAccount(-100.50);
-        BankAccount bob = new BankAccount(500.00);
-
-        centralBank.addAccount(alice);
-        centralBank.addAccount(bob);
-
-        System.out.println("\n--- Initial Balances ---");
-        System.out.println("Alice's Account (" + alice.getAccountNumber() + "): " + alice.getBalance());
-        System.out.println("Bob's Account (" + bob.getAccountNumber() + "): " + bob.getBalance());
-
-
-        // 1. Test Deposit Bug (Allows negative deposit)
-        System.out.println("\n--- Testing Deposit Bug (Negative Amount) ---");
-        alice.deposit(-50.00);
-        System.out.println("Alice's Balance: " + alice.getBalance());
-
-
-        // 2. Test Withdrawal Bug (Overdraft not checked)
-        System.out.println("\n--- Testing Withdrawal Bug (Overdraft) ---");
-        bob.withdraw(600.00); // Should fail, but will succeed and go negative
-        System.out.println("Bob's Balance: " + bob.getBalance());
-
-
-        // 3. Test Transfer Bugs (No Overdraft Check, Float Drift, Transfer to Self)
-        System.out.println("\n--- Testing Transfer Bugs ---");
-        // Transfer to self (Seeded Bug)
-        centralBank.processTransfer(alice.getAccountNumber(), alice.getAccountNumber(), 5.0);
-        // Transfer with potential float drift
-        centralBank.processTransfer(alice.getAccountNumber(), bob.getAccountNumber(), 10.33);
-
-
-        // Check final balances and history
-        System.out.println("\n--- Final Balances ---");
-        System.out.println("Alice's Account (" + alice.getAccountNumber() + "): " + alice.getBalance());
-        System.out.println("Bob's Account (" + bob.getAccountNumber() + "): " + bob.getBalance());
-
-        // print out history for each
-        alice.printHistory();
-        bob.printHistory();
     }
 }
