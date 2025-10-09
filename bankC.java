@@ -31,7 +31,6 @@ class BankAccount {
     // Params: amount to deposit into this account
     // return: void
     public void deposit(double amount) {
-        // Bug: No check for amount > 0
         balance += amount;
 
         // Log as a transaction where "from" is null (external source)
